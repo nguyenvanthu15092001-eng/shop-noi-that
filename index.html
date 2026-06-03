@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<title>SHOP PRO MAX FINAL</title>
+
+<style>
+body{font-family:Arial;margin:0;background:#f5f5f5}
+header{background:#1877f2;color:#fff;padding:15px;text-align:center}
+
+.container{max-width:1100px;margin:auto}
+
+.box{
+    background:#fff;
+    margin:10px;
+    padding:15px;
+    border-radius:10px;
+}
+
+button{
+    border:none;
+    padding:7px 12px;
+    border-radius:5px;
+    color:#fff;
+    cursor:pointer;
+}
+
+.add{background:#ee4d2d}
+.mess{background:#1877f2}
+.zalo{background:#0068ff}
+.share{background:#28a745}
+.clear{background:#999}
+.send{background:#ff5722}
+
+input{padding:6px;margin:5px}
+
+.total{color:red;font-size:18px;font-weight:bold}
+.admin{display:none}
+
+table{width:100%;border-collapse:collapse}
+th,td{border:1px solid #ddd;padding:5px;text-align:center}
+</style>
+</head>
+
+<body>
+
+<header>SHOP PRO MAX FINAL</header>
+
+<div class="container">
+
+<div class="box">
+<h3>Thông tin khách</h3>
+<input id="name" placeholder="Tên khách">
+<input id="phone" placeholder="SĐT">
+</div>
+
+<div class="box">
+<h3>Sản phẩm</h3>
+
+<p>Bàn - 1.200.000đ 
+<button class="add" onclick="addCart('Bàn',1200000)">Thêm</button></p>
+
+<p>Ghế - 800.000đ 
+<button class="add" onclick="addCart('Ghế',800000)">Thêm</button></p>
+
+</div>
+
+<div class="box">
+<h3>🛒 Giỏ hàng</h3>
+
+<ul id="cartList"></ul>
+
+<p class="total">Tổng: <span id="total">0</span>đ</p>
+
+<button class="mess" onclick="sendMessenger()">Messenger</button>
+<button class="zalo" onclick="sendZalo()">Zalo</button>
+<button class="share" onclick="shareCart()">Link giỏ</button>
+<button class="send" onclick="sendCartToCustomer()">🛒 Gửi cho khách chọn</button>
+<button class="clear" onclick="clearCart()">Xóa giỏ</button>
+
+<h4>QR thanh toán</h4>
+<img id="qr" width="200">
+</div>
+
+<!-- GIAO DIỆN KHÁCH -->
+<div class="box" id="customerBox" style="display:none">
+<h3>🛍 Khách đang xem giỏ hàng</h3>
+
+<ul id="customerCart"></ul>
+
+<p class="total">Tổng: <span id="customerTotal">0</span>đ</p>
+
+<button class="mess" onclick="customerSendMess()">Gửi lại Messenger</button>
+<button class="zalo" onclick="customerSendZalo()">Gửi lại Zalo</button>
+</div>
+
+</div>
+
+<script>
+
+let cart = JSON.parse(localStorage.getItem("cart")) || [];
+
+// LOAD GIỎ TỪ LINK (QUAN TRỌNG)
+let urlParams = new URLSearchParams(window.location.search);
+
+if(urlParams.get("cart")){
+    cart = JSON.parse(decodeURIComponent(urlParams.get("cart")));
+    document.getElementById("customerBox").style.display="block";
+    renderCustomer();
+}
+
+function save(){
+    localStorage.setItem("cart",JSON.stringify(cart));
+}
+
+function addCart(name,price){
+    let f=cart.find(i=>i.name==name);
+    if(f) f.qty++;
+    else cart.push({name,price,qty:1});
+    save(); render();
+}
+
+function render(){
+
+    let html="", total=0;
+
+    cart.forEach((i,index)=>{
+        html+=`<li>${i.name} x${i.qty} 
+        <button onclick="remove(${index})">X</button></li>`;
+        total+=i.price*i.qty;
+    });
+
+    document.getElementById("cartList").innerHTML=html;
+    document.getElementById("total").innerText=total.toLocaleString();
+
+    document.getElementById("qr").src=
+    `https://img.vietqr.io/image/970407-86928888888-compact.png?amount=${total}`;
+}
+
+function renderCustomer(){
+
+    let html="", total=0;
+
+    cart.forEach(i=>{
+        html+=`<li>${i.name} x${i.qty}</li>`;
+        total+=i.price*i.qty;
+    });
+
+    document.getElementById("customerCart").innerHTML=html;
+    document.getElementById("customerTotal").innerText=total.toLocaleString();
+}
+
+function remove(i){
+    cart.splice(i,1);
+    save(); render();
+}
+
+function clearCart(){
+    cart=[];
+    save(); render();
+}
+
+function createMsg(){
+    let msg="DON HANG\n";
+    cart.forEach(i=>{
+        msg+=`${i.name} x${i.qty}\n`;
+    });
+    return msg;
+}
+
+// ===== GỬI CHO KHÁCH =====
+function sendCartToCustomer(){
+
+    let data = encodeURIComponent(JSON.stringify(cart));
+    let link = window.location.origin + window.location.pathname + "?cart=" + data;
+
+    navigator.clipboard.writeText(link);
+
+    window.open("https://m.me/2387712738371897");
+
+    alert("Đã copy link, gửi cho khách!");
+}
+
+// ===== KHÁCH GỬI LẠI =====
+function customerSendMess(){
+    let msg=createMsg();
+    window.open("https://m.me/2387712738371897?ref="+encodeURIComponent(msg));
+}
+
+function customerSendZalo(){
+    let msg=createMsg();
+    navigator.clipboard.writeText(msg);
+    window.open("https://zalo.me/0388003459");
+    alert("Đã copy nội dung, dán gửi");
+}
+
+// ===== GỬI NHANH =====
+function sendMessenger(){
+    let msg=createMsg();
+    window.open("https://m.me/2387712738371897?ref="+encodeURIComponent(msg));
+}
+
+function sendZalo(){
+    let msg=createMsg();
+    navigator.clipboard.writeText(msg);
+    window.open("https://zalo.me/0388003459");
+}
+
+function shareCart(){
+    let data=encodeURIComponent(JSON.stringify(cart));
+    let link=window.location.origin+window.location.pathname+"?cart="+data;
+    navigator.clipboard.writeText(link);
+    alert(link);
+}
+
+render();
+
+</script>
+
+</body>
+</html>
